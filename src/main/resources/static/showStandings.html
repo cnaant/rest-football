@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Show Standings</title>
+</head>
+<script src="jquery/jquery-3.4.1.min.js"></script>
+<script type="text/javascript">
+
+var urlAllLeagues = "/football/league/all";
+
+$(function(){
+	$("#topMenu").load("links.html"); 
+	$("#status").load("status.html"); 
+	$.get(urlAllLeagues, function(data, status){
+		if (status == "success") 
+			fillLeagueList(data);
+	}).fail(function(jqXHR, textStatus, error) {
+		document.getElementById("standingsTable").innerText = jqXHR.responseJSON.message;
+	});
+});
+
+function fillLeagueList(arr) {
+    var sel = document.getElementById("seasonsSel");
+	for(i = 0; i < arr.length; i++) {
+		var opt =document.createElement("option");
+		opt.text = arr[i].country + " " + arr[i].name + " " + arr[i].seasonYear;
+		opt.value = arr[i].id;
+		sel.appendChild(opt);
+	}
+}
+
+function loadStandings() {
+    var selSeasons = document.getElementById("seasonsSel");
+	var seasonId = selSeasons.options[selSeasons.selectedIndex].value;
+	var selType = document.getElementById("standingsType");
+	var standingType = selType.options[selType.selectedIndex].value;
+	
+	var standingsUrl = "/football/standing/season/" + seasonId + "/" + standingType;
+	$.get(standingsUrl, function(data, status){
+		if (status == "success") 
+			createStandings(data);
+		
+	}).fail(function(jqXHR, textStatus, error) {
+		document.getElementById("standingsTable").innerText = jqXHR.responseJSON.message;
+	});
+}
+
+function createStandings(arr) {
+	var headers = ["rank", "team", "games", "wins", "draws", "losses", "goal diff", "points"];
+	var table = document.createElement("table");
+	table.setAttribute("border", 1);
+	var row = table.insertRow();
+	for(var h of headers) {
+		var cell = row.insertCell();
+		cell.innerText = h;
+	}
+	var rank=1;
+	for(var team of arr) {
+		row = table.insertRow();
+		var cell = row.insertCell();
+		cell.innerText = rank;
+		cell = row.insertCell();
+		cell.innerText = team.team.teamName;
+		cell = row.insertCell();
+		cell.innerText = team.homeWins + team.awayWins + team.homeDraws + team.awayDraws + team.homeLosses + team.awayLosses;
+		cell = row.insertCell();
+		cell.innerText = team.homeWins + team.awayWins;
+		cell = row.insertCell();
+		cell.innerText = team.homeDraws + team.awayDraws;
+		cell = row.insertCell();
+		cell.innerText = team.homeLosses + team.awayLosses;
+		cell = row.insertCell();
+		cell.innerText = team.totalGoalDifference;
+		cell = row.insertCell();
+		cell.innerText = team.totalPoints;
+		rank++;
+	}
+	var div = document.getElementById("standingsTable");
+	if(div.childNodes != null && div.childNodes.length >0)
+		div.replaceChild(table, div.childNodes[0]);
+	else
+		div.appendChild(table);
+}
+
+</script>
+<body>
+<div id="topMenu"></div>
+<div id="mainText"><br/>
+Choose a season: <select id="seasonsSel"></select> 
+Standings type: 
+<select id="standingsType">
+	<option value="all" selected="selected">All</option>
+	<option value="home">Home</option>
+	<option value="away">Away</option>
+</select>
+<button onclick="loadStandings()">Show Standings</button>
+<div id="standingsTable"></div>
+</div><br/>
+<div id="status"></div>
+
+</body>
+</html>
